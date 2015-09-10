@@ -186,10 +186,12 @@ namespace JSONPath
             //6. If is file is set then replace entry value with an Object have its "name" property set to the file's name, its "type" property set to the file's type, and its "body" property set to the Base64 encoding of the file's body. [RFC2045]  
             if (isFile)
             {
-                var file = (object)entryValue; //cast to underlying file type
-                string name = "dummy.txt";//file.Name;
-                string type = "txt/txt";
-                string body = Convert.ToBase64String((byte[])file);
+                JObject file = new JObject();
+                file["name"] = "dummy.txt";
+                file["type"] = "txt/txt";
+                file["body"] = Convert.ToBase64String((byte[])file);
+                //var file = (object)entryValue; //cast to underlying file type
+                //entryValue = file;
             }
 
             //7. If step has its last flag set, run the following substeps:
