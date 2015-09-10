@@ -12,7 +12,7 @@ namespace JSONPath
         static void Main(string[] args)
         {
             Example1();
-            Example2();
+            //Example2();
             Example3();
             Example4();
             Example5();
@@ -29,6 +29,7 @@ namespace JSONPath
             set.Append("hind", "Bitable", "checkbox");
             set.Append("shiny", "true", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
+            CompareJSON("{\"name\":\"Bender\",\"hind\":\"Bitable\",\"shiny\":\"true\"}", result);
         }
 
         static void Example2()
@@ -38,6 +39,7 @@ namespace JSONPath
             set.Append("bottle-on-wall", "2", "number");
             set.Append("bottle-on-wall", "3", "number");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
+            CompareJSON("{\"bottle-on-wall\":[1,2,3]}", result);
         }
 
         static void Example3()
@@ -48,6 +50,7 @@ namespace JSONPath
             set.Append("kids[1]", "Thelma", "text");
             set.Append("kids[0]", "Ashley", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
+            CompareJSON("{\"pet\":{\"species\":\"Dahut\",\"name\":\"Hypatia\"},\"kids\":[\"Ashley\",\"Thelma\"]}", result);
         }
 
         static void Example4()
@@ -56,6 +59,7 @@ namespace JSONPath
             set.Append("hearbeat[0]", "thunk", "text");
             set.Append("hearbeat[2]", "thunk", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
+            CompareJSON("{\"hearbeat\":[\"thunk\",null,\"thunk\"]}", result);
         }
 
         static void Example5()
@@ -66,6 +70,7 @@ namespace JSONPath
             set.Append("pet[1][species]", "Felis Stultus", "text");
             set.Append("pet[1][name]", "Billie", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
+            CompareJSON("{\"pet\":[{\"species\":\"Dahut\",\"name\":\"Hypatia\"},{\"species\":\"Felis Stultus\",\"name\":\"Billie\"}]}", result);
         }
 
         static void Example6()
@@ -73,6 +78,7 @@ namespace JSONPath
             FormDataSet set = new FormDataSet();
             set.Append("wow[such][deep][3][much][power][!]", "Amaze", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
+            CompareJSON("{\"wow\":{\"such\":{\"deep\":[null,null,null,{\"much\":{\"power\":{\"!\":\"Amaze\"}}}]}}}", result);
         }
 
         static void Example7()
@@ -84,6 +90,7 @@ namespace JSONPath
             set.Append("mix[key]", "key key", "text");
             set.Append("mix[car]", "car key", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
+            CompareJSON("{\"mix\":{\"\":\"scalar\",\"0\":\"array 1\",\"2\":\"array 2\",\"key\":\"key key\",\"car\":\"car key\"}}", result);
         }
 
         static void Example8()
@@ -91,6 +98,7 @@ namespace JSONPath
             FormDataSet set = new FormDataSet();
             set.Append("highlander[]", "one", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
+            CompareJSON("{\"highlander\":[\"one\"]}", result);
         }
 
         static void Example10()
@@ -99,6 +107,12 @@ namespace JSONPath
             set.Append("error[good]", "BOOM!", "text");
             set.Append("error[bad", "BOOM BOOM!", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
+            CompareJSON("{\"error\":{\"good\":\"BOOM!\"},\"error[bad\":\"BOOM BOOM!\"}", result);
+        }
+
+        private static void CompareJSON(string expected, string actual)
+        {
+            Debug.Assert(JObject.Parse(expected).ToString(Formatting.None) == JObject.Parse(actual).ToString(Formatting.None));
         }
 
         private static byte[] ApplicationJsonEncode(FormDataSet formDataSet)
