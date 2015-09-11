@@ -1,8 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace JSONPath
@@ -29,7 +28,7 @@ namespace JSONPath
             set.Append("hind", "Bitable", "checkbox");
             set.Append("shiny", "true", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
-            CompareJSON("{\"name\":\"Bender\",\"hind\":\"Bitable\",\"shiny\":\"true\"}", result);
+            Debug.Assert("{\"name\":\"Bender\",\"hind\":\"Bitable\",\"shiny\":\"true\"}" == result);
         }
 
         static void Example2()
@@ -39,7 +38,7 @@ namespace JSONPath
             set.Append("bottle-on-wall", "2", "number");
             set.Append("bottle-on-wall", "3", "number");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
-            CompareJSON("{\"bottle-on-wall\":[1,2,3]}", result);
+            Debug.Assert("{\"bottle-on-wall\":[1,2,3]}" == result);
         }
 
         static void Example3()
@@ -50,7 +49,7 @@ namespace JSONPath
             set.Append("kids[1]", "Thelma", "text");
             set.Append("kids[0]", "Ashley", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
-            CompareJSON("{\"pet\":{\"species\":\"Dahut\",\"name\":\"Hypatia\"},\"kids\":[\"Ashley\",\"Thelma\"]}", result);
+            Debug.Assert("{\"pet\":{\"species\":\"Dahut\",\"name\":\"Hypatia\"},\"kids\":[\"Ashley\",\"Thelma\"]}" == result);
         }
 
         static void Example4()
@@ -59,7 +58,7 @@ namespace JSONPath
             set.Append("hearbeat[0]", "thunk", "text");
             set.Append("hearbeat[2]", "thunk", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
-            CompareJSON("{\"hearbeat\":[\"thunk\",null,\"thunk\"]}", result);
+            Debug.Assert("{\"hearbeat\":[\"thunk\",null,\"thunk\"]}" == result);
         }
 
         static void Example5()
@@ -70,7 +69,7 @@ namespace JSONPath
             set.Append("pet[1][species]", "Felis Stultus", "text");
             set.Append("pet[1][name]", "Billie", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
-            CompareJSON("{\"pet\":[{\"species\":\"Dahut\",\"name\":\"Hypatia\"},{\"species\":\"Felis Stultus\",\"name\":\"Billie\"}]}", result);
+            Debug.Assert("{\"pet\":[{\"species\":\"Dahut\",\"name\":\"Hypatia\"},{\"species\":\"Felis Stultus\",\"name\":\"Billie\"}]}" == result);
         }
 
         static void Example6()
@@ -78,7 +77,7 @@ namespace JSONPath
             FormDataSet set = new FormDataSet();
             set.Append("wow[such][deep][3][much][power][!]", "Amaze", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
-            CompareJSON("{\"wow\":{\"such\":{\"deep\":[null,null,null,{\"much\":{\"power\":{\"!\":\"Amaze\"}}}]}}}", result);
+            Debug.Assert("{\"wow\":{\"such\":{\"deep\":[null,null,null,{\"much\":{\"power\":{\"!\":\"Amaze\"}}}]}}}" == result);
         }
 
         static void Example7()
@@ -90,7 +89,7 @@ namespace JSONPath
             set.Append("mix[key]", "key key", "text");
             set.Append("mix[car]", "car key", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
-            CompareJSON("{\"mix\":{\"\":\"scalar\",\"0\":\"array 1\",\"2\":\"array 2\",\"key\":\"key key\",\"car\":\"car key\"}}", result);
+            Debug.Assert("{\"mix\":{\"\":\"scalar\",\"0\":\"array 1\",\"2\":\"array 2\",\"key\":\"key key\",\"car\":\"car key\"}}" == result);
         }
 
         static void Example8()
@@ -98,7 +97,7 @@ namespace JSONPath
             FormDataSet set = new FormDataSet();
             set.Append("highlander[]", "one", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
-            CompareJSON("{\"highlander\":[\"one\"]}", result);
+            Debug.Assert("{\"highlander\":[\"one\"]}" == result);
         }
 
         static void Example10()
@@ -107,18 +106,13 @@ namespace JSONPath
             set.Append("error[good]", "BOOM!", "text");
             set.Append("error[bad", "BOOM BOOM!", "text");
             var result = Encoding.UTF8.GetString(ApplicationJsonEncode(set));
-            CompareJSON("{\"error\":{\"good\":\"BOOM!\"},\"error[bad\":\"BOOM BOOM!\"}", result);
-        }
-
-        private static void CompareJSON(string expected, string actual)
-        {
-            Debug.Assert(JObject.Parse(expected).ToString(Formatting.None) == JObject.Parse(actual).ToString(Formatting.None));
+            Debug.Assert("{\"error\":{\"good\":\"BOOM!\"},\"error[bad\":\"BOOM BOOM!\"}" == result);
         }
 
         private static byte[] ApplicationJsonEncode(FormDataSet formDataSet)
         {
             //1. Let resulting object be a new Object.
-            var resultingObject = new JObject();
+            var resultingObject = new JsonObject();
 
             //2. For each entry in the form data set, perform these substeps:
             foreach (var entry in formDataSet._entries)
@@ -128,10 +122,10 @@ namespace JSONPath
 
                 TextDataSetEntry text = entry as TextDataSetEntry;
                 FileDataSetEntry file = entry as FileDataSetEntry;
-                JValue entryValue;
+                JsonValue entryValue;
                 if (text != null)
                 {
-                    entryValue = new JValue(text.Value);
+                    entryValue = new JsonValue(text.Value);
                 }
                 else
                 {
@@ -142,20 +136,20 @@ namespace JSONPath
                         ms = new MemoryStream();
                         stream.CopyTo(ms);
                     }
-                    entryValue = new JValue(Convert.ToBase64String(ms.ToArray()));
+                    entryValue = new JsonValue(Convert.ToBase64String(ms.ToArray()));
                 }
 
                 //2.2. Let steps be the result of running the steps to parse a JSON encoding path on the entry's name. 
                 List<Step> steps = ParseJSONPath(entry.Name);
 
                 //2.3. Let context be set to the value of resulting object.
-                JContainer context = resultingObject;
+                JsonElement context = resultingObject;
 
                 //2.4. For each step in the list of steps, run the following subsubsteps:
                 foreach (var step in steps)
                 {
                     //2.4.1. Let the current value be the value obtained by getting the step's key from the current context. 
-                    JToken currentValue = context is JArray && step.Key is int ? context.ElementAtOrDefault((int)step.Key) : context[step.Key.ToString()];
+                    JsonElement currentValue = context[step.Key];
 
                     //2.4.2. Run the steps to set a JSON encoding value with the current context, the step, the current value, the entry's value, and the is file flag. 
                     //2.4.3. Update context to be the value returned by the steps to set a JSON encoding value ran above.
@@ -170,12 +164,12 @@ namespace JSONPath
             return Encoding.UTF8.GetBytes(result);
         }
 
-        private static string Stringify(JObject resultingObject)
+        private static string Stringify(JsonElement resultingObject)
         {
             return resultingObject.ToString();
         }
 
-        private static JContainer JsonEncodeValue(JContainer context, Step step, JToken currentValue, JValue entryValue, bool isFile)
+        private static JsonElement JsonEncodeValue(JsonElement context, Step step, JsonElement currentValue, JsonElement entryValue, bool isFile)
         {
             //1. Let context be the context this algorithm is called with.
             //2. Let step be the step of the path this algorithm is called with.
@@ -186,48 +180,37 @@ namespace JSONPath
             //6. If is file is set then replace entry value with an Object have its "name" property set to the file's name, its "type" property set to the file's type, and its "body" property set to the Base64 encoding of the file's body. [RFC2045]  
             if (isFile)
             {
-                JObject file = new JObject();
-                file["name"] = "dummy.txt";
-                file["type"] = "txt/txt";
-                file["body"] = Convert.ToBase64String((byte[])file);
+                JsonObject file = new JsonObject();
+                file["name"] = new JsonValue("dummy.txt");
+                file["type"] = new JsonValue("txt/txt");
+                //file["body"] = new JsonValue(Convert.ToBase64String((byte[])file));
                 //var file = (object)entryValue; //cast to underlying file type
-                //entryValue = file;
+                entryValue = file;
             }
 
             //7. If step has its last flag set, run the following substeps:
             if (step.Last)
             {
                 //7.1. If current value is undefined, run the following subsubsteps:
-                if (currentValue == null || currentValue.Type == JTokenType.Null) //undefined
+                if (currentValue == null) //undefined
                 {
                     //7.1.1. If step's append flag is set, set the context's property named by the step's key to a new Array containing entry value as its only member. 
                     if (step.Append)
                     {
-                        var arr = new JArray();
-                        arr.Add(entryValue);
+                        var arr = new JsonArray();
+                        arr.Elements.Add(entryValue);
                         context[step.Key] = arr;
                     }
                     //7.1.2. Otherwise, set the context's property named by the step's key to entry value. 
                     else
                     {
-                        if (context is JArray)
-                        {
-                            for (int i = context.Count; i <= (int)step.Key; i++)
-                            {
-                                context.Add(null);
-                            }
-                            context[step.Key] = entryValue;
-                        }
-                        else
-                        {
-                            context[step.Key.ToString()] = entryValue;
-                        }
+                        context[step.Key] = entryValue;
                     }
                 }
                 //7.2. Else if current value is an Array, then get the context's property named by the step's key and push entry value onto it. 
-                else if (currentValue is JArray)
+                else if (currentValue is JsonArray)
                 {
-                    (context[step.Key] as JArray).Add(entryValue);
+                    (context[step.Key] as JsonArray).Elements.Add(entryValue);
                 }
                 //7.3. Else if current value is an Object and the is file flag is not set, then run the steps to set a JSON encoding value with
                 //context set to the current value;
@@ -236,16 +219,16 @@ namespace JSONPath
                 //the entry value;
                 //and the is file flag.
                 //Return the result. 
-                else if (currentValue is JObject && !isFile)
+                else if (currentValue is JsonObject && !isFile)
                 {
-                    return JsonEncodeValue(currentValue as JObject, new Step { Type = StepType.Object, Key = "", Last = true }, currentValue[""] as JContainer, entryValue, true);
+                    return JsonEncodeValue(currentValue, new Step { Type = StepType.Object, Key = "", Last = true }, currentValue[""], entryValue, true);
                 }
                 //7.4. Otherwise, set the context's property named by the step's key to an Array containing current value and entry value, in this order. 
                 else
                 {
-                    JArray arr = new JArray();
-                    arr.Add(currentValue);
-                    arr.Add(entryValue);
+                    JsonArray arr = new JsonArray();
+                    arr.Elements.Add(currentValue);
+                    arr.Elements.Add(entryValue);
                     context[step.Key] = arr;
                 }
                 //7.5. Return context.
@@ -260,55 +243,40 @@ namespace JSONPath
                     //8.1.1. If step's next type is "array", set the context's property named by the step's key to a new empty Array and return it. 
                     if (step.NextType == StepType.Array)
                     {
-                        var jArray = new JArray();
-                        context[step.Key] = jArray;
-                        return jArray;
+                        return context[step.Key] = new JsonArray();
                     }
                     //8.2.2. Otherwise,set the context's property named by the step's key to a new empty Object and return it. 
                     else
                     {
-                        var jObject = new JObject();
-                        if (step.Type == StepType.Array && (int)step.Key >= (context as JArray).Count)
-                        {
-                            for (int i = context.Count; i <= (int)step.Key; i++)
-                            {
-                                context.Add(null);
-                            }
-                            context[step.Key] = jObject;
-                        }
-                        else
-                        {
-                            context[step.Key] = jObject;
-                        }
-                        return jObject;
+                        return context[step.Key] = new JsonObject();
                     }
                 }
                 //8.2. Else if current value is an Object, then return the value of the context's property named by the step's key. 
-                else if (currentValue is JObject)
+                else if (currentValue is JsonObject)
                 {
-                    return context[step.Key] as JContainer;
+                    return context[step.Key];
                 }
                 //8.3. Else if current value is an Array, then run the following subsubsteps:
-                else if (currentValue is JArray)
+                else if (currentValue is JsonArray)
                 {
                     //8.3.1. If step's next type is "array", return current value.
                     if (step.NextType == StepType.Array)
                     {
-                        return currentValue as JArray;
+                        return currentValue;
                     }
                     //8.3.2. Otherwise, run the following subsubsubsteps:
                     else
                     {
                         //8.3.2.1. Let object be a new empty Object.
-                        var @object = new JObject();
+                        var @object = new JsonObject();
 
                         //8.3.2.2. For each item and zero-based index i in current value, if item is not undefined then set a property of object named i to item. 
                         int i = 0;
-                        foreach (var item in currentValue)
+                        foreach (var item in (currentValue as JsonArray).Elements)
                         {
                             if (item != null)
                             {
-                                @object[i.ToString()] = item;
+                                @object[i] = item;
                             }
                             i++;
                         }
@@ -324,7 +292,7 @@ namespace JSONPath
                 else
                 {
                     //8.4.1. Let object be a new Object with a property named by the empty string set to current value.
-                    var @object = new JObject();
+                    var @object = new JsonObject();
                     @object[""] = currentValue;
 
                     //8.4.2. Set the context's property named by the step's key to object. 
@@ -510,20 +478,7 @@ namespace JSONPath
             return new List<Step> { new Step { Key = original, Last = true, Type = StepType.Object } };
         }
     }
-
-    public static class Extensions
-    {
-        public static TValue GetValueOrDefault<TKey, TValue>(this Dictionary<TKey, TValue> source, TKey key)
-        {
-            TValue tmp;
-            if (source.TryGetValue(key, out tmp))
-            {
-                return tmp;
-            }
-            return default(TValue);
-        }
-    }
-
+    
     internal class Step
     {
         public bool Append { get; internal set; }
